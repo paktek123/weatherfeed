@@ -8,6 +8,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 app = Flask(__name__)
+app.debug = True
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 db = SQLAlchemy(app)
 
@@ -24,6 +25,7 @@ class Weather(db.Model):
     self.rain = rain
     self.wind = wind
     self.cloud = cloud
+    self.data = dict(lightning=self.lightning, rain=self.rain, wind=self.wind, cloud=self.cloud)
     self.created_at = created_at
     if not self.created_at:
       self.created_at = datetime.now()
@@ -37,9 +39,9 @@ class WeatherForm(Form):
   wind = IntegerField('wind', validators=[DataRequired()])
   cloud = IntegerField('cloud', validators=[DataRequired()])
 
-@app.route('/consume', methods=('POST'))
+@app.route('/consume', methods=('POST',))
 def consume():
-  form = WeatherForm(request.form)
+  form = WeatherForm(request.form, csrf_enabled=False)
   if form.validate_on_submit():
     weather = Weather(form.lightning.data, form.rain.data, form.wind.data, form.cloud.data)
     db.session.add(weather)
@@ -53,4 +55,7 @@ def consume():
 @app.route('/now')
 def show_data():
   all_weather = Weather.query.all()
-  return json.dumps(all_weather)
+  return json.dumps([dict(lightning=w.lightning, rain=w.rain, wind=w.wind, cloud=w.cloud) for w in all_weather][-1])
+
+if __name__ == '__main__':
+  app.run(debug=True)
