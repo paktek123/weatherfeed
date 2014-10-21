@@ -1,6 +1,5 @@
 import os
 import json
-import requests
 from flask import Flask, request
 from flask_wtf import Form
 from wtforms import IntegerField
@@ -53,5 +52,5 @@ def consume():
 
 @app.route('/now')
 def show_data():
-  data = {'':
-    return 'Hello World!'
+  all_weather = Weather.query.all()
+  return json.dumps(all_weather)
