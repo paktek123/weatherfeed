@@ -46,16 +46,33 @@ def consume():
     weather = Weather(form.lightning.data, form.rain.data, form.wind.data, form.cloud.data)
     db.session.add(weather)
     db.session.commit()
+
+    # run some maintanence
+    all_weather = Weather.query.all()
+    if len(all_weather) > 90000:
+      db.session.delete(all_weather[0])
+      db.session.commit()
+
     db.session.remove()
     return json.dumps('SUCCESS'), 200
   else:
     return json.dumps(form.errors), 401
 
-
 @app.route('/now')
 def show_data():
   all_weather = Weather.query.all()
   return json.dumps([dict(lightning=w.lightning, rain=w.rain, wind=w.wind, cloud=w.cloud) for w in all_weather][-1])
+
+@app.route('/forecast')
+def forecast():
+  all_weather = Weather.query.all()
+  todays_data = [w for w in all_weather if w.created_at.day == datetime.now().day and w.created_at.month == datetime.now().month]
+  agg_lightning = sum(w.lightning for w in todays_data) / len(todays_data)
+  agg_rain = sum(w.rain for w in todays_data) / len(todays_data)
+  agg_wind = sum(w.wind for w in todays_data) / len(todays_data)
+  agg_cloud = sum(w.cloud for w in todays_data) / len(todays_data)
+  return json.dumps(dict(lightning=agg_lightning, rain=agg_rain, wind=agg_wind, cloud=agg_cloud))
+
 
 if __name__ == '__main__':
   app.run(debug=True)
