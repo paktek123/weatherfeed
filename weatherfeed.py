@@ -67,6 +67,8 @@ def show_data():
 def forecast():
   all_weather = Weather.query.all()
   todays_data = [w for w in all_weather if w.created_at.day == datetime.now().day and w.created_at.month == datetime.now().month]
+  if not todays_data:
+    todays_data = all_weather[-7:]
   agg_lightning = sum(w.lightning for w in todays_data) / len(todays_data)
   agg_rain = sum(w.rain for w in todays_data) / len(todays_data)
   agg_wind = sum(w.wind for w in todays_data) / len(todays_data)
